@@ -1,8 +1,11 @@
 
 import userModel from "../models/user.model.js";
 import bcrypt from "bcryptjs";
+
+
 import { generateVerificationCode } from "../utils/generateVerificationCode.js";
 import { generateTokenAndSetCookies } from "../utils/generateTokenAndSetCookies.js";
+import { sendForgotPasswordEmail, sendResetEmailConfirmation, sendVerificationEmail, sendWelcomeEmail } from "../utils/email.js";
 
 
 export const signup = async (req, res) => {
@@ -17,8 +20,37 @@ export const signup = async (req, res) => {
 
         // check user is already exist or not from an our database
         const userExist = await userModel.findOne({ email })
+
         if (userExist) {
-            return res.status(400).json({ success: false, message: "User already exist" })
+            // If the user exists and is verified, return an error
+            if (userExist.isVerified === true) {
+                return res.status(400).json({ success: false, message: "User already exists" });
+            }
+
+            // If the user exists but is not verified, resend OTP
+            const newVerificationToken = generateVerificationCode();
+            userExist.verificationToken = newVerificationToken;
+            userExist.verificationTokenExpiresAt = Date.now() + 24 * 60 * 60 * 1000; // 24 hours from now
+
+            // Save the updated user information
+            await userExist.save();
+
+            // jwt token function created and calling 
+            generateTokenAndSetCookies(res, user._id)
+            
+            // Send the new OTP on existing user email
+            await sendVerificationEmail(userExist.email, newVerificationToken);
+
+            
+
+            return res.status(200).json({
+                success: true,
+                message: "A new OTP has been sent to your email.",
+                userExist: {
+                    ...userExist._doc,
+                    password: undefined
+                }
+            });
         }
 
         // hash the password
@@ -34,7 +66,7 @@ export const signup = async (req, res) => {
             email,
             password: hash_password,
             verificationToken,
-            verificationTokenExpiresAt: Date.now() + 10 * 60 * 1000
+            verificationTokenExpiresAt: Date.now() + 24 * 60 * 60 * 1000  // 24 hr time for otp-verification
         })
 
         // save the data in our database 
@@ -42,7 +74,10 @@ export const signup = async (req, res) => {
 
         // jwt token function created and calling 
         generateTokenAndSetCookies(res, user._id)
-        
+
+        // to user email
+        await sendVerificationEmail(user.email, verificationToken)
+
         return res
             .status(201)
             .json({
@@ -52,17 +87,172 @@ export const signup = async (req, res) => {
                     ...user._doc,
                     password: undefined
                 }
-              
             })
     } catch (error) {
         return res.status(500).json({ success: false, message: "Internal server error" })
     }
 }
 
-export const login = async (req, res) => {
+export const verifyEmail = async (req, res) => {
+    // - - - - - -
+    try {
+        const { code } = req.body;
+        if (!code) {
+            return res.status(400).json({ success: false, message: "Enter your otp" })
+        }
+        const userExist = await userModel.findOne({
+            verificationToken: code,
+            verificationTokenExpiresAt: { $gt: Date.now() }
+        })
 
+        if (!userExist) {
+            return res.status(400).json({ success: false, message: "Invalid credentials or verification code expired" })
+        }
+        userExist.isVerified = true;
+        userExist.verificationToken = undefined;
+        userExist.verificationTokenExpiresAt = undefined;
+        await userExist.save()
+
+        await sendWelcomeEmail(userExist.email, userExist.name);
+
+        return res.status(200).json({ success: true, message: "Email verified successfull" })
+
+    } catch (error) {
+        return res.status(500).json({ success: false, message: "Internal server error" })
+    }
+}
+
+export const login = async (req, res) => {
+    try {
+        // take all the data from request from body
+        const { email, password } = req.body;
+
+        // check user is already available in our database or not
+        const userExist = await userModel.findOne({ email });
+        if (!userExist) {
+            return res.status(400).json({ success: false, message: "User not exist" })
+        }
+
+        // if user exist 
+        if (userExist) {
+            // if user exist than check in our database isVerified is false if it is false than return rerror
+            if (userExist.isVerified === false) {
+                return res.status(400).json({ success: false, message: "Invalid credentials please signup or verified your account" })
+            }
+        }
+
+        // check if user exist and isVerified is true than password match 
+        const isEqualPassword = await bcrypt.compare(password, userExist.password);
+        if (!isEqualPassword) {
+            return res.status(400).json({ success: false, message: "Invalid credentials" })
+        }
+
+        // generate cookies for our session or authorization
+        const token = generateTokenAndSetCookies(res, userExist._id);
+
+        // modified the last login
+        userExist.lastLogin = new Date();
+
+        // save the data or preserve the data in our database 
+        await userExist.save();
+        return res
+            .status(200)
+            .json({
+                success: true,
+                message: "Logged in successfully",
+                name: userExist.name,
+                email: userExist.email
+            })
+    } catch (error) {
+        return res.status(500).json({ success: false, message: "Internal server error" })
+    }
 }
 
 export const logout = async (req, res) => {
+    res.clearCookie("token", {
+        httpOnly: true,
+        secure: process.env.NODE_ENV === "production",
+        sameSite: "strict",
+    })
+    return res.status(200).json({ success: true, message: "Logged out successfully" })
+}
 
+export const forgotPassword = async (req, res) => {
+
+    // all the request are taken from body
+    const { email } = req.body;
+    try {
+        // check user is already exist or not
+        const userExist = await userModel.findOne({ email })
+        if (!userExist) {
+            return res.status(400).json({ success: false, message: "User not exist" })
+        }
+
+        // generate a new verification code
+        const token = generateVerificationCode()
+
+        // save that code in our database
+        userExist.resetPasswordToken = token;
+
+        // save the reset time 24 hr expiry
+        userExist.resetPasswordExpiresAt = Date.now() + 24 * 60 * 60 * 1000; // 24 hours from now
+
+        // save the data in our database 
+        await userExist.save();
+
+        // send forgot email verification to user email
+        await sendForgotPasswordEmail(userExist.email, token)
+
+        return res.status(200).json({ success: true, message: "Reset token send successfully" })
+    } catch (error) {
+        return res.status(500).json({ success: false, message: "Internal Server error" })
+    }
+}
+
+export const resetOldPassword = async (req, res) => {
+    try {
+        // take all the data from req.body
+        const { code, password, confirmpassword } = req.body;
+
+        if (password !== confirmpassword) {
+            return res.status(400).json({ success: false, message: "Password not match" })
+        }
+
+        // check userExist code is available in our database 
+        const userExist = await userModel.findOne({
+            resetPasswordToken: code,
+            resetPasswordExpiresAt: { $gt: Date.now() }
+        })
+        if (!userExist) {
+            return res.status(400).json({ success: false, message: "Invalid credentials or verification code expired" })
+        }
+
+        const salt_round = 10;
+        const hash_password = await bcrypt.hash(password, salt_round)
+        userExist.password = hash_password;
+        userExist.resetPasswordToken = undefined
+        userExist.resetPasswordExpiresAt = undefined
+
+        await userExist.save();
+
+        await sendResetEmailConfirmation(userExist.email, userExist.name)
+
+        return res.status(200).json({ success: true, message: "Password update successfull" })
+
+    } catch (error) {
+        return res.status(500).json({ success: false, message: "Internal Server error" })
+    }
+}
+
+
+export const checkAuthWorking = async(req, res) => {
+    try {
+        const userInfo = await userModel.findById(req.userId).select("-password");
+        if(!userInfo) {
+            return res.status(400).json({ success: false, message: "User not find "})
+        }
+        return res.status(200).json({ success: true, message: "User fetch successfully", userInfo})
+    } catch (error) {
+        return res.status(500).json({ success: false, message: "Internal server error"})
+    }
 }

@@ -2,6 +2,7 @@ import express from "express";
 import bodyParser from "body-parser";
 import dotenv from "dotenv";
 import cors from "cors";
+import cookieParser from "cookie-parser";
 import { connectDb } from "./config/db.js";
 import authrouter from "./routers/auth.route.js";
 
@@ -19,6 +20,7 @@ const PORT = process.env.PORT || 5000;
 
 // database calling for connection 
 connectDb()
+
 // cloudinary connected
 
 
@@ -26,6 +28,9 @@ connectDb()
 app.use(bodyParser.json());
 app.use(express.json());
 app.use(express.urlencoded({ extended: true}))
+
+// cookies calling for authorization
+app.use(cookieParser())
 
 // api end points 
 app.use("/api/auth", authrouter)
