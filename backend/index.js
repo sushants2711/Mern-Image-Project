@@ -5,6 +5,8 @@ import cors from "cors";
 import cookieParser from "cookie-parser";
 import { connectDb } from "./config/db.js";
 import authrouter from "./routers/auth.route.js";
+import imageRouter from "./routers/image.route.js";
+import { cloudinaryConection } from "./services/cloudinary.js";
 
 // dotenv configuration 
 dotenv.config();
@@ -22,7 +24,7 @@ const PORT = process.env.PORT || 5000;
 connectDb()
 
 // cloudinary connected
-
+cloudinaryConection()
 
 // json data parse 
 app.use(bodyParser.json());
@@ -32,8 +34,11 @@ app.use(express.urlencoded({ extended: true}))
 // cookies calling for authorization
 app.use(cookieParser())
 
-// api end points 
+// api end points for user authentication
 app.use("/api/auth", authrouter)
+
+// api endpoints for image galleries
+app.use("/api/images", imageRouter)
 
 // server started 
 app.listen(PORT, () => {

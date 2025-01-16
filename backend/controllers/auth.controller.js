@@ -5,7 +5,7 @@ import bcrypt from "bcryptjs";
 
 import { generateVerificationCode } from "../utils/generateVerificationCode.js";
 import { generateTokenAndSetCookies } from "../utils/generateTokenAndSetCookies.js";
-import { sendForgotPasswordEmail, sendResetEmailConfirmation, sendVerificationEmail, sendWelcomeEmail } from "../utils/email.js";
+import { sendDeleteEmail, sendForgotPasswordEmail, sendResetEmailConfirmation, sendVerificationEmail, sendWelcomeEmail } from "../utils/email.js";
 
 
 export const signup = async (req, res) => {
@@ -23,7 +23,7 @@ export const signup = async (req, res) => {
 
         if (userExist) {
             // If the user exists and is verified, return an error
-            if (userExist.isVerified === true) {
+            if (userExist.isVerified) {
                 return res.status(400).json({ success: false, message: "User already exists" });
             }
 
@@ -36,12 +36,10 @@ export const signup = async (req, res) => {
             await userExist.save();
 
             // jwt token function created and calling 
-            generateTokenAndSetCookies(res, user._id)
+            generateTokenAndSetCookies(res, userExist._id)
             
             // Send the new OTP on existing user email
             await sendVerificationEmail(userExist.email, newVerificationToken);
-
-            
 
             return res.status(200).json({
                 success: true,
@@ -136,7 +134,7 @@ export const login = async (req, res) => {
         // if user exist 
         if (userExist) {
             // if user exist than check in our database isVerified is false if it is false than return rerror
-            if (userExist.isVerified === false) {
+            if (!userExist.isVerified) {
                 return res.status(400).json({ success: false, message: "Invalid credentials please signup or verified your account" })
             }
         }
@@ -188,6 +186,9 @@ export const forgotPassword = async (req, res) => {
             return res.status(400).json({ success: false, message: "User not exist" })
         }
 
+        if(!userExist.isVerified) {
+            return res.status(400).json({ success: false, message: "User not verified for forgot password please Signup"})
+        }
         // generate a new verification code
         const token = generateVerificationCode()
 
@@ -254,5 +255,44 @@ export const checkAuthWorking = async(req, res) => {
         return res.status(200).json({ success: true, message: "User fetch successfully", userInfo})
     } catch (error) {
         return res.status(500).json({ success: false, message: "Internal server error"})
+    }
+}
+
+export const deleteAccount = async (req, res) => {
+    try {
+        // taking request from body
+        const { name, email, password } = req.body;
+
+        // check user Exist or not
+        const userExist = await userModel.findOne({ email })
+        if(!userExist) {
+            return res.status(400).json({ success: false, message: "User not exist"});
+        }
+
+        // compare the password if user is not exist
+        const originalPasswordCheck = await bcrypt.compare(password, userExist.password);
+        if(!originalPasswordCheck) {
+            return res.status(400).json({ success: false, message: "Password not match"})
+        }
+
+        if(userExist.name !== name) {
+            return res.status(400).json({ success: false, message: "Invalid name"})
+        }
+
+        if(userExist.email !== email) {
+            return res.status(400).json({ success: false, message: "Email not valid"})
+        }
+        
+        // send delete email to the users
+        await sendDeleteEmail(userExist.email);
+
+        // delete the user from database 
+        const deleteUser = await userModel.findOneAndDelete({ email });
+
+        // return the response after delete success fully
+        return res.status(200).json({ success: true, message: "User delete successfull", deleteUser});
+
+    } catch (error) {
+        return res.status(500).json({ success: false, message: "Internal Server error"});
     }
 }

@@ -1,5 +1,5 @@
 import { mailtrapClient, sender } from "../services/mailtrap.config.js"
-import { PASSWORD_RESET_REQUEST_TEMPLATE, PASSWORD_RESET_SUCCESS_TEMPLATE, VERIFICATION_EMAIL_TEMPLATE } from "./emailTemplate.js"
+import { PASSWORD_RESET_REQUEST_TEMPLATE, PASSWORD_RESET_SUCCESS_TEMPLATE, SEND_WELCOME_EMAIL, USER_DELETE_SUCCESS_TEMPLATE, VERIFICATION_EMAIL_TEMPLATE } from "./emailTemplate.js"
 
 export const sendVerificationEmail = async (email, verificationToken) => {
     const recipient = [{ email }]
@@ -21,15 +21,15 @@ export const sendVerificationEmail = async (email, verificationToken) => {
 
 export const sendWelcomeEmail = async (email, name) => {
     const recipient = [{ email }]
+    if(!recipient) {
+        return res.status(400).json({ success: false, message: "Email not provide"})
+    }
     try {
         const response = await mailtrapClient.send({
             from: sender,
             to: recipient,
-            template_uuid: "7bfa22ad-c899-4fbb-9e42-2a74cfe16dd5",
-            template_variables: {
-                company_info_name: "Online Image Uploader",
-                name: name
-            },
+            subject: "Welcome Email",
+            html: SEND_WELCOME_EMAIL.replace("{name}", name),
             category: "Welcome email"
         })
     } catch (error) {
@@ -67,5 +67,23 @@ export const sendResetEmailConfirmation = async (email, name) => {
         })
     } catch (error) {
         return res.status(500).json({ success: false, message: "Welcome message error" })
+    }
+}
+
+export const sendDeleteEmail = async(email) => {
+    const recipient = [{ email }];
+    if(!recipient) {
+        return res.status(400).json({ success: false, message: "Email not provide"})
+    }
+    try {
+        const response = await mailtrapClient.send({
+            from: sender,
+            to: recipient,
+            subject: "Account Remove Successfully",
+            html: USER_DELETE_SUCCESS_TEMPLATE,
+            category: "Email Delete Successfully"
+        }).then(()=> console.log("response send"))
+    } catch (error) {
+        return res.status(500).json({ success: false, message: "Delete user message error from email"})
     }
 }

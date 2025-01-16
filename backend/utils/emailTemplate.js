@@ -93,3 +93,151 @@ export const PASSWORD_RESET_REQUEST_TEMPLATE = `
 </body>
 </html>
 `;
+
+export const USER_DELETE_SUCCESS_TEMPLATE = `<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>User Deleted Successfully</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 0;
+            padding: 0;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            background-color: #f9f9f9;
+        }
+        .container {
+            text-align: center;
+            background: #fff;
+            padding: 2rem;
+            border-radius: 8px;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+        }
+        .container h1 {
+            color: #4CAF50;
+            font-size: 2rem;
+            margin-bottom: 1rem;
+        }
+        .container p {
+            color: #555;
+            font-size: 1rem;
+            margin-bottom: 2rem;
+        }
+        .container a {
+            text-decoration: none;
+            color: #fff;
+            background-color: #4CAF50;
+            padding: 0.75rem 1.5rem;
+            border-radius: 4px;
+            font-size: 1rem;
+            transition: background-color 0.3s;
+        }
+        .container a:hover {
+            background-color: #45a049;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>User Deleted Successfully</h1>
+        <p>The user account has been removed from the system.</p>
+        <a href="/home">Return to Home</a>
+    </div>
+</body>
+</html>
+`
+
+export const SEND_WELCOME_EMAIL = `
+<!DOCTYPE html>
+    <html lang="en">
+    <head>
+        <meta charset="UTF-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <title>Welcome Email</title>
+        <style>
+            body {
+                font-family: Arial, sans-serif;
+                margin: 0;
+                padding: 0;
+                background-color: #f4f4f4;
+                color: #333;
+            }
+            .email-container {
+                max-width: 600px;
+                margin: 20px auto;
+                background: #fff;
+                border-radius: 10px;
+                overflow: hidden;
+                box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
+            }
+            .header {
+                background-color: #4CAF50;
+                color: white;
+                text-align: center;
+                padding: 20px 0;
+            }
+            .header img {
+                width: 50px;
+                height: 50px;
+            }
+            .content {
+                padding: 20px;
+            }
+            .content h1 {
+                color: #4CAF50;
+                margin-bottom: 10px;
+            }
+            .content p {
+                font-size: 16px;
+                line-height: 1.6;
+            }
+            .cta-button {
+                display: inline-block;
+                margin: 20px 0;
+                padding: 10px 20px;
+                color: white;
+                background-color: #4CAF50;
+                text-decoration: none;
+                border-radius: 5px;
+                font-weight: bold;
+            }
+            .cta-button:hover {
+                background-color: #45a049;
+            }
+            .footer {
+                text-align: center;
+                padding: 10px;
+                font-size: 14px;
+                color: #777;
+                background-color: #f9f9f9;
+                border-top: 1px solid #ddd;
+            }
+            .footer a {
+                color: #4CAF50;
+                text-decoration: none;
+            }
+        </style>
+    </head>
+    <body>
+        <div class="email-container">
+            <div class="header">
+                <h2>ImageUploader</h2>
+            </div>
+            <div class="content">
+                <h1>Welcome, {name} !</h1>
+                <p>We are thrilled to have you on board. With <strong>ImageUploader</strong>, you can easily upload, manage, and share your images seamlessly.</p>
+                <p>Get started by exploring your dashboard and uploading your first image. Our platform is designed to make your experience enjoyable and efficient.</p>
+                <p>If you have any questions or need assistance, feel free to contact me.</p>
+            </div>
+            <div class="footer">
+                <p>Thank you for joining us!<br>Happy uploading, <strong>ImageUploader</strong> Team</p>
+            </div>
+        </div>
+    </body>
+    </html>
+`;

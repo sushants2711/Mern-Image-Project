@@ -92,3 +92,22 @@ export const resetPasswordMiddleware = async (req, res, next) => {
     next()
 }
 
+export const deleteUserMiddleware = async (req, res, next) => {
+    const schema = joi.object({
+        name: joi.string().min(2).max(30).required().trim(),
+        email: joi.string().email().required().trim(),
+        password: joi.string().min(8).max(40).required(),
+    })
+    const { error } = schema.validate(req.body);
+    if( error ) {
+        return res
+        .status(200)
+        .json({
+            success: false,
+            message: "User error occured",
+            error: error.details[0].message
+        })
+    }
+    next()
+}
+
