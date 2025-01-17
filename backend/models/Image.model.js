@@ -19,6 +19,11 @@ const imageSchema = new mongoose.Schema({
     createdAt: {
         type: Date,
         default: new Date()
+    },
+    userId: { 
+        type: mongoose.Schema.Types.ObjectId,
+        ref: 'User',  
+        required: true
     }
 })
 

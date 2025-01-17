@@ -6,7 +6,7 @@ import cookieParser from "cookie-parser";
 import { connectDb } from "./config/db.js";
 import authrouter from "./routers/auth.route.js";
 import imageRouter from "./routers/image.route.js";
-import { cloudinaryConection } from "./services/cloudinary.js";
+
 
 // dotenv configuration 
 dotenv.config();
@@ -24,7 +24,7 @@ const PORT = process.env.PORT || 5000;
 connectDb()
 
 // cloudinary connected
-cloudinaryConection()
+
 
 // json data parse 
 app.use(bodyParser.json());
