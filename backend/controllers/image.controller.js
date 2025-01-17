@@ -1,5 +1,6 @@
+import { decode } from "jsonwebtoken";
 import ImageModel from "../models/Image.model.js"
-
+import userModel from "../models/user.model.js";
 
 export const imageController = async (req, res) => {
     try {
@@ -30,3 +31,40 @@ export const imageController = async (req, res) => {
         return res.status(500).json({ success: false, message: "Internal Server error" })
     }
 }
+
+export const allImages = async (req, res) => {
+    try {
+        const data = await ImageModel.find({})
+        return res
+            .status(200)
+            .json({
+                success: true,
+                message: "data fetch successfully",
+                data
+            })
+
+    } catch (error) {
+        return res.status(500).json({ success: false, message: "Internal Server error" })
+    }
+}
+
+export const imageById = async (req, res) => {
+    const { id } = req.params;
+    try {
+        if (!id) {
+            return res.status(400).json({ success: false, message: "Id is missing" })
+        }
+
+        const data = await ImageModel.find({ _id: id })
+        return res
+            .status(200)
+            .json({
+                success: true,
+                message: "Image detail",
+                data
+            })
+    } catch (error) {
+        return res.status(500).json({ success: false, message: "Internal Server Error" })
+    }
+}
+

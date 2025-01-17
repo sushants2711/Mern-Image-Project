@@ -37,7 +37,7 @@ export const signup = async (req, res) => {
 
             // jwt token function created and calling 
             generateTokenAndSetCookies(res, userExist._id)
-            
+
             // Send the new OTP on existing user email
             await sendVerificationEmail(userExist.email, newVerificationToken);
 
@@ -186,8 +186,8 @@ export const forgotPassword = async (req, res) => {
             return res.status(400).json({ success: false, message: "User not exist" })
         }
 
-        if(!userExist.isVerified) {
-            return res.status(400).json({ success: false, message: "User not verified for forgot password please Signup"})
+        if (!userExist.isVerified) {
+            return res.status(400).json({ success: false, message: "User not verified for forgot password please Signup" })
         }
         // generate a new verification code
         const token = generateVerificationCode()
@@ -246,15 +246,18 @@ export const resetOldPassword = async (req, res) => {
 }
 
 
-export const checkAuthWorking = async(req, res) => {
+export const checkAuthWorking = async (req, res) => {
     try {
         const userInfo = await userModel.findById(req.userId).select("-password");
-        if(!userInfo) {
-            return res.status(400).json({ success: false, message: "User not find "})
+
+        if (!userInfo) {
+            return res.status(400).json({ success: false, message: "User not find " })
         }
-        return res.status(200).json({ success: true, message: "User fetch successfully", userInfo})
+
+        return res.status(200).json({ success: true, message: "User fetch successfully", userInfo })
+
     } catch (error) {
-        return res.status(500).json({ success: false, message: "Internal server error"})
+        return res.status(500).json({ success: false, message: "Internal server error" })
     }
 }
 
@@ -265,24 +268,24 @@ export const deleteAccount = async (req, res) => {
 
         // check user Exist or not
         const userExist = await userModel.findOne({ email })
-        if(!userExist) {
-            return res.status(400).json({ success: false, message: "User not exist"});
+        if (!userExist) {
+            return res.status(400).json({ success: false, message: "User not exist" });
         }
 
         // compare the password if user is not exist
         const originalPasswordCheck = await bcrypt.compare(password, userExist.password);
-        if(!originalPasswordCheck) {
-            return res.status(400).json({ success: false, message: "Password not match"})
+        if (!originalPasswordCheck) {
+            return res.status(400).json({ success: false, message: "Password not match" })
         }
 
-        if(userExist.name !== name) {
-            return res.status(400).json({ success: false, message: "Invalid name"})
+        if (userExist.name !== name) {
+            return res.status(400).json({ success: false, message: "Invalid name" })
         }
 
-        if(userExist.email !== email) {
-            return res.status(400).json({ success: false, message: "Email not valid"})
+        if (userExist.email !== email) {
+            return res.status(400).json({ success: false, message: "Email not valid" })
         }
-        
+
         // send delete email to the users
         await sendDeleteEmail(userExist.email);
 
@@ -290,9 +293,9 @@ export const deleteAccount = async (req, res) => {
         const deleteUser = await userModel.findOneAndDelete({ email });
 
         // return the response after delete success fully
-        return res.status(200).json({ success: true, message: "User delete successfull", deleteUser});
+        return res.status(200).json({ success: true, message: "User delete successfull", deleteUser });
 
     } catch (error) {
-        return res.status(500).json({ success: false, message: "Internal Server error"});
+        return res.status(500).json({ success: false, message: "Internal Server error" });
     }
 }
